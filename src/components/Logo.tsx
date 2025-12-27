@@ -1,5 +1,7 @@
 import React from 'react'
 
+import logo from '../assets/logo.png'
+
 interface LogoProps {
   className?: string
   size?: number
@@ -8,7 +10,7 @@ interface LogoProps {
 export const Logo: React.FC<LogoProps> = ({ className = '', size = 32 }) => {
   return (
     <img
-      src="/src/assets/logo.png"
+      src={logo}
       alt="Synfield Logo"
       width={size}
       height={size}
