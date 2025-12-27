@@ -16,7 +16,7 @@ export const Features: React.FC = () => {
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((feature, i) => (
             <div key={i} className="group flex gap-5 p-4">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-gray-100 bg-white text-synfield-green shadow-sm transition-all group-hover:bg-synfield-green group-hover:text-white">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-gray-100 bg-white text-synfield-green shadow-sm transition-all group-hover:bg-gray-900 group-hover:text-white">
                 {feature.icon}
               </div>
               <div>

@@ -25,11 +25,11 @@ export const ContactCTA: React.FC = () => {
             <div className="flex flex-col justify-center gap-4 sm:flex-row">
               <Button
                 variant="secondary"
-                className="border-none bg-white px-10 py-5 font-bold shadow-xl hover:bg-gray-100 text-synfield-green"
+                className="border-none bg-white px-10 py-5 font-bold shadow-xl hover:bg-gray-100 text-white hover:text-gray-900"
                 onClick={handleContact}
               >
                 <Send className="mr-2 h-5 w-5" />
-                Falar com a Crivora
+                Falar conosco
               </Button>
             </div>
           </div>

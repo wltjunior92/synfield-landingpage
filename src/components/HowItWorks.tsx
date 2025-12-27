@@ -19,7 +19,7 @@ export const HowItWorks: React.FC = () => {
               key={step.number}
               className="group relative rounded-2xl border border-gray-100 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
             >
-              <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 font-bold text-synfield-green group-hover:bg-synfield-green group-hover:text-white transition-colors">
+              <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 font-bold text-synfield-green group-hover:bg-gray-900 group-hover:text-white transition-colors">
                 {step.number}
               </div>
               <h3 className="mb-3 text-lg font-bold text-synfield-graphite">
