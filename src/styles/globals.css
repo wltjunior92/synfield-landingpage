@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+  scroll-behavior: smooth;
+}
+
+.bg-synfield-green {
+  background-color: #0a3622;
+}
+
+.text-synfield-green {
+  color: #0a3622;
+}
+
+.border-synfield-green {
+  border-color: #0a3622;
+}
+
+.bg-synfield-graphite {
+  background-color: #2d2d2d;
+}
+
+.text-synfield-graphite {
+  color: #2d2d2d;
+}
