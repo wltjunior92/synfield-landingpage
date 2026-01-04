@@ -13,13 +13,10 @@ export const AboutCrivora: React.FC = () => {
               A força por trás do Synfield
             </h2>
             <p className="mb-6 leading-relaxed text-gray-600">
-              A Crivora é uma fábrica de software especializada em transformar operações
-              complexas em fluxos digitais eficientes. Somos os criadores e mantenedores
-              do Synfield, garantindo evolução contínua e suporte técnico de alto nível.
+              A Crivora desenvolve soluções focadas em operação real. O Synfield nasceu da necessidade prática de controlar, auditar e confiar na execução em campo.
             </p>
             <p className="leading-relaxed text-gray-600">
-              Nosso foco é produtividade, eficiência e entrega de valor através de dados
-              estruturados para operações de larga escala.
+              Somos criadores e mantenedores do Synfield, garantindo evolução contínua e suporte técnico para operações que precisam de precisão e confiabilidade.
             </p>
           </div>
           <div className="flex w-full justify-center md:w-1/3">

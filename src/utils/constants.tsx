@@ -21,60 +21,60 @@ export const FEATURES: FeatureCardProps[] = [
   {
     icon: <ClipboardCheck className="h-6 w-6" />,
     title: 'Relatórios Padronizados',
-    description: 'Elimine planilhas informais e padronize a coleta de dados em campo.',
+    description: 'Elimina improvisos e garante que todos coletam dados no mesmo padrão.',
   },
   {
     icon: <Camera className="h-6 w-6" />,
     title: 'Evidências por Foto',
-    description: 'Comprovação visual imediata de cada ação realizada no ponto de venda.',
+    description: 'Comprovação visual e imediata de cada ação realizada no ponto de venda.',
   },
   {
     icon: <MapPin className="h-6 w-6" />,
     title: 'Registro de Localização',
-    description: 'Validação por GPS para garantir que a equipe está onde deveria estar.',
+    description: 'Validação por GPS para confirmar que a equipe estava onde deveria estar.',
   },
   {
     icon: <History className="h-6 w-6" />,
     title: 'Histórico e Auditoria',
-    description: 'Acesse registros passados e audite execuções com poucos cliques.',
+    description: 'Consulte registros passados e audite execuções com confiança e rastreabilidade.',
   },
   {
     icon: <LayoutDashboard className="h-6 w-6" />,
     title: 'Dashboards Operacionais',
-    description: 'Visão clara da operação por loja, região ou promotor em tempo real.',
+    description: 'Visualize problemas e oportunidades em tempo real por loja, região ou executor.',
   },
   {
     icon: <Database className="h-6 w-6" />,
     title: 'Exportação de Dados',
-    description: 'Extraia informações para BI ou relatórios customizados de forma simples.',
+    description: 'Use os dados em apresentações, auditorias e relatórios customizados.',
   },
 ]
 
 export const STEPS: StepCardProps[] = [
   {
     number: 1,
-    title: 'Planejamento e Missões',
-    description: 'Defina as tarefas e roteiros para sua equipe de campo de forma centralizada.',
+    title: 'Planejamento de Tarefas',
+    description: 'Defina as tarefas e roteiros para sua equipe de forma centralizada.',
   },
   {
     number: 2,
-    title: 'Execução no PDV',
-    description: 'O promotor recebe e executa as missões diretamente via aplicativo intuitivo.',
+    title: 'Execução em Campo',
+    description: 'O executor recebe a missão no celular e realiza a tarefa com facilidade.',
   },
   {
     number: 3,
-    title: 'Coleta de Evidências',
-    description: 'Fotos, formulários e localização são registrados durante a execução.',
+    title: 'Registro de Evidências',
+    description: 'Fotos, dados e localização são capturados durante a execução.',
   },
   {
     number: 4,
-    title: 'Consolidação Automática',
-    description: 'Os dados são enviados e processados instantaneamente para o portal.',
+    title: 'Envio Automático',
+    description: 'As informações são enviadas automaticamente para o sistema.',
   },
   {
     number: 5,
-    title: 'Auditoria e Insights',
-    description: 'Acompanhe os resultados e tome decisões baseadas em dados reais.',
+    title: 'Acompanhamento e Auditoria',
+    description: 'Veja os resultados em tempo real e audite tudo com segurança.',
   },
 ]
 
