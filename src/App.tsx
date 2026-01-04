@@ -1,6 +1,7 @@
 import { AboutCrivora } from './components/AboutCrivora'
 import { ContactCTA } from './components/ContactCTA'
 import { Features } from './components/Features'
+import { FieldReality } from './components/FieldReality'
 import { Footer } from './components/Footer'
 import { Header } from './components/Header'
 import { Hero } from './components/Hero'
@@ -15,6 +16,7 @@ function App() {
       <Header />
       <main className="flex-grow">
         <Hero />
+        <FieldReality />
         <ProblemSolver />
         <HowItWorks />
         <TargetAudience />

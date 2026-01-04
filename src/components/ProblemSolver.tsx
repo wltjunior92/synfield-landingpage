@@ -1,10 +1,10 @@
 import { AlertCircle, CheckCircle } from 'lucide-react'
 
 const PROBLEMS = [
-  'Falta de evidências concretas da execução em loja',
-  'Dificuldade em padronizar o trabalho de equipes distribuídas',
-  'Processos lentos para consolidação de relatórios de campo',
-  'Visibilidade tardia de problemas como rupturas e erros de preço',
+  'Relatórios sem comprovação real do que foi feito',
+  'Execuções diferentes entre equipes e regiões',
+  'Demora para identificar falhas e rupturas',
+  'Falta de histórico confiável para auditoria e cobrança',
 ]
 
 export const ProblemSolver: React.FC = () => {
@@ -47,13 +47,10 @@ export const ProblemSolver: React.FC = () => {
               <CheckCircle size={18} /> Como o Synfield responde
             </h3>
             <p className="mb-8 text-xl font-medium leading-relaxed md:text-2xl">
-              Transformamos a incerteza em dados auditáveis. Proporcionamos rastreabilidade
-              total desde o planejamento da missão até a evidência fotográfica no ponto de
-              venda.
+              O Synfield transforma atividades de campo em registros confiáveis, com evidência visual, localização e histórico completo para auditoria.
             </p>
             <p className="opacity-90 leading-relaxed text-emerald-100">
-              Sua operação deixa de ser um "buraco negro" de informações e passa a ser uma
-              fonte de vantagem competitiva e controle estratégico.
+              Você passa a ter controle real sobre a execução, com dados que comprovam o que foi feito, quando e onde.
             </p>
           </div>
         </div>

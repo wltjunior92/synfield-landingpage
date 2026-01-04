@@ -5,7 +5,7 @@ import { Button } from './Button'
 
 export const ContactCTA: React.FC = () => {
   const handleContact = () => {
-    window.location.href = `mailto:${CONTACT_EMAIL}?subject=Contato Comercial - Synfield`
+    window.location.href = `mailto:${CONTACT_EMAIL}?subject=Falar com um especialista - Synfield`
   }
 
   return (
@@ -16,11 +16,10 @@ export const ContactCTA: React.FC = () => {
 
           <div className="relative z-10 mx-auto max-w-2xl">
             <h2 className="mb-6 text-3xl font-bold md:text-5xl">
-              Pronto para profissionalizar sua operação de campo?
+              Pronto para ter evidências reais da sua operação em campo?
             </h2>
             <p className="mb-10 text-lg leading-relaxed md:text-xl text-white">
-              Entre em contato conosco hoje mesmo para uma demonstração personalizada e
-              veja como o Synfield pode transformar seus resultados.
+              Fale com um especialista e veja como o Synfield funciona na prática.
             </p>
             <div className="flex flex-col justify-center gap-4 sm:flex-row">
               <Button
@@ -29,7 +28,7 @@ export const ContactCTA: React.FC = () => {
                 onClick={handleContact}
               >
                 <Send className="mr-2 h-5 w-5" />
-                Falar conosco
+                Conhecer a plataforma
               </Button>
             </div>
           </div>

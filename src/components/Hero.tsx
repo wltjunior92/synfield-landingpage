@@ -5,7 +5,7 @@ import { Button } from './Button'
 
 export const Hero: React.FC = () => {
   const handleDemoClick = () => {
-    window.location.href = `mailto:${CONTACT_EMAIL}?subject=Solicitação de Demonstração - Synfield`
+    window.location.href = `mailto:${CONTACT_EMAIL}?subject=Ver o Synfield na prática - Synfield`
   }
 
   return (
@@ -21,15 +21,14 @@ export const Hero: React.FC = () => {
               Produto Crivora
             </div>
             <h1 className="mb-6 text-4xl font-bold leading-tight text-synfield-graphite md:text-5xl lg:text-6xl">
-              Controle e rastreabilidade da execução em campo.
+              Tenha certeza do que foi executado em campo. Em tempo real.
             </h1>
             <p className="mb-10 text-lg leading-relaxed text-gray-600 md:text-xl">
-              Evidências padronizadas e dashboards em tempo real para indústrias e
-              agências que buscam uma operação profissional.
+              Padronize tarefas, registre evidências com fotos e localização, acompanhe resultados em tempo real e audite tudo com segurança.
             </p>
             <div className="flex flex-col gap-4 sm:flex-row">
               <Button variant="primary" onClick={handleDemoClick}>
-                Solicitar demonstração
+                Ver o Synfield na prática
               </Button>
               <Button
                 variant="outline"
@@ -43,15 +42,15 @@ export const Hero: React.FC = () => {
             <div className="mt-10 flex flex-col gap-3 text-sm text-gray-500 sm:flex-row sm:items-center sm:gap-6">
               <div className="flex items-center gap-1">
                 <CheckCircle2 className="h-4 w-4 text-synfield-green" />
-                <span>Baseado em Dados</span>
+                <span>Evidências em Campo</span>
               </div>
               <div className="flex items-center gap-1">
                 <CheckCircle2 className="h-4 w-4 text-synfield-green" />
-                <span>Mobile First</span>
+                <span>Registro com Localização</span>
               </div>
               <div className="flex items-center gap-1">
                 <CheckCircle2 className="h-4 w-4 text-synfield-green" />
-                <span>Pronto para B2B</span>
+                <span>Auditoria e Dashboards</span>
               </div>
             </div>
           </div>
