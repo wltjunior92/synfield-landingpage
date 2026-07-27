@@ -6,6 +6,7 @@ import { Footer } from './components/Footer'
 import { Header } from './components/Header'
 import { Hero } from './components/Hero'
 import { HowItWorks } from './components/HowItWorks'
+import { PricingSection } from './components/PricingSection'
 import { ProblemSolver } from './components/ProblemSolver'
 import { SecuritySection } from './components/SecuritySection'
 import { TargetAudience } from './components/TargetAudience'
@@ -21,6 +22,7 @@ function App() {
         <HowItWorks />
         <TargetAudience />
         <Features />
+        <PricingSection />
         <SecuritySection />
         <AboutCrivora />
         <ContactCTA />

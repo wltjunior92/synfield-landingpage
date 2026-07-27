@@ -11,10 +11,10 @@ import { FeatureCardProps, NavLink, StepCardProps } from '../types'
 
 export const NAV_LINKS: NavLink[] = [
   { label: 'Produto', href: '#produto' },
-  { label: 'Como funciona', href: '#como-funciona' },
-  { label: 'Para quem é', href: '#para-quem' },
+  { label: 'Como Funciona', href: '#como-funciona' },
+  { label: 'Para Quem', href: '#para-quem' },
+  { label: 'Planos', href: '#planos' },
   { label: 'Segurança', href: '#seguranca' },
-  { label: 'Contato', href: '#contato' },
 ]
 
 export const FEATURES: FeatureCardProps[] = [

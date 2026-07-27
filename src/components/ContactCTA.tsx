@@ -18,17 +18,17 @@ export const ContactCTA: React.FC = () => {
             <h2 className="mb-6 text-3xl font-bold md:text-5xl">
               Pronto para ter evidências reais da sua operação em campo?
             </h2>
-            <p className="mb-10 text-lg leading-relaxed md:text-xl text-white">
-              Fale com um especialista e veja como o Synfield funciona na prática.
+            <p className="mb-10 text-lg leading-relaxed text-white md:text-xl">
+              Escolha o plano ideal para a sua equipe ou fale diretamente com a nossa equipe.
             </p>
             <div className="flex flex-col justify-center gap-4 sm:flex-row">
               <Button
                 variant="secondary"
-                className="border-none bg-white px-10 py-5 font-bold shadow-xl hover:bg-gray-100 text-white hover:text-gray-900"
+                className="border-none bg-white px-10 py-5 font-bold text-synfield-graphite shadow-xl hover:bg-gray-100 hover:text-black"
                 onClick={handleContact}
               >
                 <Send className="mr-2 h-5 w-5" />
-                Conhecer a plataforma
+                Falar com a Crivora
               </Button>
             </div>
           </div>
