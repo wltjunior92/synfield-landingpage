@@ -1,15 +1,23 @@
 import axios from 'axios'
 import {
+  AlertCircle,
+  ArrowLeft,
   ArrowRight,
+  Briefcase,
   Building2,
   Check,
   CheckCircle2,
   Database,
+  FileText,
   HardDrive,
+  Info,
   Loader2,
   Mail,
+  MapPin,
+  Phone,
   ShieldCheck,
   Sparkles,
+  User,
   X,
 } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
@@ -98,9 +106,37 @@ export const PricingSection: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedPlanName, setSelectedPlanName] = useState<string>('')
   const [selectedPriceId, setSelectedPriceId] = useState<string>('')
-  const [tenantName, setTenantName] = useState('')
-  const [customerEmail, setCustomerEmail] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLoadingCnpj, setIsLoadingCnpj] = useState(false)
+
+  // Estados de Validação de CNPJ / Federação / Erros
+  const [documentError, setDocumentError] = useState<string | null>(null)
+  const [emailError, setEmailError] = useState<string | null>(null)
+  const [linkedPartnerInfo, setLinkedPartnerInfo] = useState<{
+    id: string
+    name: string
+    type: 'AGENCY' | 'INDUSTRY'
+  } | null>(null)
+
+  // Controle das Etapas (1: Empresa, 2: Endereço, 3: Responsável)
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1)
+
+  const [formData, setFormData] = useState({
+    ownerName: '',
+    ownerEmail: '',
+    tenantName: '',
+    tenantType: 'AGENCY' as 'AGENCY' | 'INDUSTRY',
+    document: '',
+    phone: '',
+    billingEmail: '',
+    addressZipCode: '',
+    addressStreet: '',
+    addressNumber: '',
+    addressComplement: '',
+    addressNeighborhood: '',
+    addressCity: '',
+    addressState: '',
+  })
 
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false)
 
@@ -123,12 +159,10 @@ export const PricingSection: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    // Detecta se o Stripe redirecionou de volta com ?checkout=success
     const urlParams = new URLSearchParams(window.location.search)
     if (urlParams.get('checkout') === 'success') {
       setIsSuccessModalOpen(true)
 
-      // Limpa os parâmetros da URL sem recarregar a página
       const cleanUrl = window.location.pathname + window.location.hash
       window.history.replaceState({}, document.title, cleanUrl)
     }
@@ -160,6 +194,104 @@ export const PricingSection: React.FC = () => {
     })
   }
 
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
+    const { name, value } = e.target
+    if (name === 'document') {
+      setDocumentError(null)
+    }
+    if (name === 'ownerEmail') {
+      setEmailError(null)
+    }
+    setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  // Auto-complete BrasilAPI + Validação de CNPJ/Ponte de Federação no Backend
+  const handleDocumentBlur = async () => {
+    const cleanDoc = formData.document.replace(/\D/g, '')
+    setDocumentError(null)
+
+    if (cleanDoc.length === 11 || cleanDoc.length === 14) {
+      try {
+        setIsLoadingCnpj(true)
+
+        // 1. Consulta BrasilAPI se for CNPJ (14 dígitos)
+        if (cleanDoc.length === 14) {
+          try {
+            const brasilApiRes = await axios.get(
+              `https://brasilapi.com.br/api/cnpj/v1/${cleanDoc}`,
+            )
+            const data = brasilApiRes.data
+            if (data) {
+              setFormData((prev) => ({
+                ...prev,
+                tenantName: data.nome_fantasia || data.razao_social || prev.tenantName,
+                phone: data.ddd_telefone_1 ? data.ddd_telefone_1.replace(/\D/g, '') : prev.phone,
+                addressZipCode: data.cep ? data.cep.replace(/\D/g, '') : prev.addressZipCode,
+                addressStreet: data.logradouro || prev.addressStreet,
+                addressNumber: data.numero || prev.addressNumber,
+                addressComplement: data.complemento || prev.addressComplement,
+                addressNeighborhood: data.bairro || prev.addressNeighborhood,
+                addressCity: data.municipio || prev.addressCity,
+                addressState: data.uf || prev.addressState,
+              }))
+            }
+          } catch (e) {
+            console.error('Erro na consulta BrasilAPI:', e)
+          }
+        }
+
+        // 2. Consulta de Verificação de Documento no Backend Synfield
+        const checkRes = await axios.post<{
+          existsAsPartner: boolean
+          partner?: { id: string; name: string; type: 'AGENCY' | 'INDUSTRY' }
+        }>(`${env.VITE_APP_API_URL}/checkout/check-document`, {
+          document: cleanDoc,
+        })
+
+        if (checkRes.data.existsAsPartner && checkRes.data.partner) {
+          setLinkedPartnerInfo(checkRes.data.partner)
+          setFormData((prev) => ({
+            ...prev,
+            tenantName: checkRes.data.partner?.name || prev.tenantName,
+          }))
+        } else {
+          setLinkedPartnerInfo(null)
+        }
+      } catch (err) {
+        if (axios.isAxiosError(err) && err.response?.status === 409) {
+          setDocumentError('Já existe uma conta ativa cadastrada com este CNPJ/CPF no Synfield.')
+        }
+      } finally {
+        setIsLoadingCnpj(false)
+      }
+    }
+  }
+
+  // Auto-complete ViaCEP
+  const handleZipCodeBlur = async () => {
+    const cleanCep = formData.addressZipCode.replace(/\D/g, '')
+    if (cleanCep.length === 8) {
+      try {
+        const response = await axios.get(
+          `https://viacep.com.br/ws/${cleanCep}/json/`,
+        )
+        if (!response.data.erro) {
+          setFormData((prev) => ({
+            ...prev,
+            addressStreet: response.data.logradouro || prev.addressStreet,
+            addressNeighborhood: response.data.bairro || prev.addressNeighborhood,
+            addressCity: response.data.localidade || prev.addressCity,
+            addressState: response.data.uf || prev.addressState,
+          }))
+        }
+      } catch (err) {
+        console.error('Erro ao buscar CEP:', err)
+      }
+    }
+  }
+
   // Abre o modal de identificação ao escolher um plano
   const handleOpenCheckoutModal = (planName: string, priceId: string) => {
     setSelectedPlanName(planName)
@@ -167,25 +299,71 @@ export const PricingSection: React.FC = () => {
     setIsModalOpen(true)
   }
 
-  // Envia os dados para o endpoint createCheckoutSessionController
-  const handleCheckoutSubmit = async (e: React.FormEvent) => {
+  // Validação simples para avançar cada passo
+  const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!tenantName.trim() || !customerEmail.trim()) {
-      alert('Por favor, preencha o nome da empresa e o e-mail.')
+    if (currentStep === 1) {
+      if (documentError) {
+        alert('Por favor, corrija o documento informado antes de prosseguir.')
+        return
+      }
+      if (!formData.document.trim() || !formData.tenantName.trim() || !formData.phone.trim()) {
+        alert('Por favor, preencha o CNPJ/CPF, o Nome da Empresa e o Telefone.')
+        return
+      }
+      setCurrentStep(2)
+    } else if (currentStep === 2) {
+      if (
+        !formData.addressZipCode.trim() ||
+        !formData.addressStreet.trim() ||
+        !formData.addressNumber.trim() ||
+        !formData.addressNeighborhood.trim() ||
+        !formData.addressCity.trim() ||
+        !formData.addressState.trim()
+      ) {
+        alert('Por favor, preencha todos os campos obrigatórios do endereço.')
+        return
+      }
+      setCurrentStep(3)
+    }
+  }
+
+  // Disparo Final para o Backend
+  const handleFinalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!formData.ownerName.trim() || !formData.ownerEmail.trim()) {
+      alert('Por favor, preencha o Nome e E-mail do Responsável.')
       return
     }
 
     try {
       setIsSubmitting(true)
 
+      const payload = {
+        priceId: selectedPriceId,
+        ownerName: formData.ownerName,
+        ownerEmail: formData.ownerEmail,
+        tenantName: formData.tenantName,
+        tenantType: formData.tenantType,
+        document: formData.document.replace(/\D/g, ''),
+        phone: formData.phone.replace(/\D/g, ''),
+        billingEmail: formData.billingEmail.trim() || undefined,
+        addressZipCode: formData.addressZipCode.replace(/\D/g, ''),
+        addressStreet: formData.addressStreet,
+        addressNumber: formData.addressNumber,
+        addressComplement: formData.addressComplement.trim() || undefined,
+        addressNeighborhood: formData.addressNeighborhood,
+        addressCity: formData.addressCity,
+        addressState: formData.addressState.toUpperCase(),
+        linkedPartnerId: linkedPartnerInfo?.id,
+        linkedPartnerType: linkedPartnerInfo?.type,
+      }
+
       const response = await axios.post<{ checkoutUrl: string }>(
         `${env.VITE_APP_API_URL}/checkout/session`,
-        {
-          priceId: selectedPriceId,
-          customerEmail,
-          tenantName,
-        },
+        payload,
       )
 
       if (response.data.checkoutUrl) {
@@ -193,9 +371,18 @@ export const PricingSection: React.FC = () => {
       }
     } catch (err) {
       console.error('Erro ao criar sessão de checkout:', err)
-      if (axios.isAxiosError(err)) {
-        alert(err.response?.data?.message || 'Ocorreu um erro ao conectar ao servidor.')
+      if (axios.isAxiosError(err) && err.response?.status === 409) {
+        setEmailError(
+          'Este e-mail já está cadastrado no Synfield. Se você já possui uma conta ativa, acesse o painel administrativo da sua organização para contratar um novo plano. Caso queira realizar uma nova contratação como um novo usuário, utilize outro e-mail.',
+        )
+      } else {
+        alert(
+          axios.isAxiosError(err)
+            ? err.response?.data?.message
+            : 'Ocorreu um erro ao validar os dados.',
+        )
       }
+    } finally {
       setIsSubmitting(false)
     }
   }
@@ -465,82 +652,496 @@ export const PricingSection: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal de Identificação do Cliente / Empresa */}
+      {/* MODAL RESPONSIVO MULTI-STEP COM SCROLL INTERNO */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-sm animate-fade-in">
+          <div className="relative flex max-h-[90vh] w-full max-w-xl flex-col rounded-2xl sm:rounded-3xl bg-white p-5 sm:p-8 shadow-2xl overflow-hidden">
+
+            {/* Botão Fechar Fixo */}
             <button
               onClick={() => !isSubmitting && setIsModalOpen(false)}
-              className="absolute right-6 top-6 text-gray-400 hover:text-gray-600 transition-colors"
+              className="absolute right-4 top-4 sm:right-6 sm:top-6 z-10 text-gray-400 hover:text-gray-600 transition-colors p-1"
             >
               <X className="h-5 w-5" />
             </button>
 
-            <div className="mb-6">
-              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
-                Plano {selectedPlanName}
+            {/* Cabeçalho Fixo do Modal */}
+            <div className="mb-4 pr-6 flex-shrink-0">
+              <span className="inline-block rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">
+                Assinando Plano {selectedPlanName}
               </span>
-              <h3 className="mt-3 text-2xl font-bold text-synfield-graphite">
-                Identifique sua empresa
+              <h3 className="mt-1 text-xl sm:text-2xl font-bold text-synfield-graphite">
+                Configuração da Conta
               </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Informe o nome da sua organização e o e-mail do responsável para prosseguir para o pagamento seguro.
-              </p>
             </div>
 
-            <form onSubmit={handleCheckoutSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                  Nome da Empresa
-                </label>
-                <div className="relative">
-                  <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ex: Trade Marketing Soluções Ltda"
-                    value={tenantName}
-                    onChange={(e) => setTenantName(e.target.value)}
-                    className="w-full rounded-xl border border-gray-300 py-3 pl-11 pr-4 text-sm text-synfield-graphite focus:border-synfield-green focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
-                  E-mail do Responsável
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="email"
-                    required
-                    placeholder="seu.nome@suaempresa.com.br"
-                    value={customerEmail}
-                    onChange={(e) => setCustomerEmail(e.target.value)}
-                    className="w-full rounded-xl border border-gray-300 py-3 pl-11 pr-4 text-sm text-synfield-graphite focus:border-synfield-green focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-synfield-green py-3.5 text-center text-sm font-bold text-white shadow-md hover:bg-emerald-900 transition-all disabled:opacity-50"
+            {/* STEPPER COMPACTO E RESPONSIVO */}
+            <div className="mb-5 flex items-center justify-between border-b border-gray-100 pb-3 flex-shrink-0">
+              <div className="flex items-center gap-1.5">
+                <div
+                  className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-all ${
+                    currentStep === 1
+                      ? 'bg-synfield-green text-white ring-2 ring-emerald-500/20'
+                      : currentStep > 1
+                      ? 'bg-emerald-100 text-synfield-green'
+                      : 'bg-gray-100 text-gray-400'
+                  }`}
                 >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" /> Gerando Checkout...
-                    </>
-                  ) : (
-                    <>
-                      Ir para Pagamento Seguro <ArrowRight className="h-4 w-4" />
-                    </>
-                  )}
-                </button>
+                  {currentStep > 1 ? <CheckCircle2 className="h-4 w-4" /> : '1'}
+                </div>
+                <span
+                  className={`text-xs font-bold ${
+                    currentStep === 1 ? 'text-synfield-graphite' : 'text-gray-400'
+                  }`}
+                >
+                  Empresa
+                </span>
               </div>
-            </form>
+
+              <div className="h-0.5 flex-1 bg-gray-200 mx-2" />
+
+              <div className="flex items-center gap-1.5">
+                <div
+                  className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-all ${
+                    currentStep === 2
+                      ? 'bg-synfield-green text-white ring-2 ring-emerald-500/20'
+                      : currentStep > 2
+                      ? 'bg-emerald-100 text-synfield-green'
+                      : 'bg-gray-100 text-gray-400'
+                  }`}
+                >
+                  {currentStep > 2 ? <CheckCircle2 className="h-4 w-4" /> : '2'}
+                </div>
+                <span
+                  className={`text-xs font-bold ${
+                    currentStep === 2 ? 'text-synfield-graphite' : 'text-gray-400'
+                  }`}
+                >
+                  Endereço
+                </span>
+              </div>
+
+              <div className="h-0.5 flex-1 bg-gray-200 mx-2" />
+
+              <div className="flex items-center gap-1.5">
+                <div
+                  className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-all ${
+                    currentStep === 3
+                      ? 'bg-synfield-green text-white ring-2 ring-emerald-500/20'
+                      : 'bg-gray-100 text-gray-400'
+                  }`}
+                >
+                  3
+                </div>
+                <span
+                  className={`text-xs font-bold ${
+                    currentStep === 3 ? 'text-synfield-graphite' : 'text-gray-400'
+                  }`}
+                >
+                  Gestor
+                </span>
+              </div>
+            </div>
+
+            {/* ÁREA COM SCROLL INTERNO PARA OS FORMULÁRIOS */}
+            <div className="flex-1 overflow-y-auto pr-1">
+
+              {/* ETAPA 1: Empresa */}
+              {currentStep === 1 && (
+                <form onSubmit={handleNextStep} className="space-y-3.5">
+                  <div className="mb-1">
+                    <h4 className="text-sm font-bold text-synfield-graphite">
+                      1. Dados da Empresa
+                    </h4>
+                    <p className="text-xs text-gray-500">
+                      Informe o CNPJ para preenchimento automático.
+                    </p>
+                  </div>
+
+                  {/* Banner Informativo de Ponte de Federação */}
+                  {linkedPartnerInfo && (
+                    <div className="rounded-xl bg-blue-50 p-3 border border-blue-200 flex items-start gap-2.5 text-xs text-blue-900">
+                      <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold">Empresa parceira identificada!</p>
+                        <p className="mt-0.5 leading-relaxed">
+                          Identificamos que <strong>{linkedPartnerInfo.name}</strong> já está cadastrada como parceira no Synfield. Ao prosseguir, sua conta será vinculada como dona oficial do cadastro desta empresa.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div className="sm:col-span-1">
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        CNPJ ou CPF <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="text"
+                          name="document"
+                          required
+                          placeholder="00.000.000/0000-00"
+                          value={formData.document}
+                          onChange={handleInputChange}
+                          onBlur={handleDocumentBlur}
+                          className={`w-full rounded-xl border py-2 pl-9 pr-8 text-sm focus:outline-none ${
+                            documentError
+                              ? 'border-red-500 focus:border-red-600'
+                              : 'border-gray-300 focus:border-synfield-green'
+                          }`}
+                        />
+                        {isLoadingCnpj && (
+                          <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-synfield-green" />
+                        )}
+                      </div>
+                      {documentError && (
+                        <p className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-red-600">
+                          <AlertCircle className="h-3.5 w-3.5" /> {documentError}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        Nome da Empresa / Razão Social <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="text"
+                          name="tenantName"
+                          required
+                          placeholder="Razão Social ou Nome Fantasia"
+                          value={formData.tenantName}
+                          onChange={handleInputChange}
+                          className="w-full rounded-xl border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-synfield-green focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        Tipo de Empresa <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <select
+                          name="tenantType"
+                          value={formData.tenantType}
+                          onChange={handleInputChange}
+                          className="w-full rounded-xl border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-synfield-green focus:outline-none bg-white"
+                        >
+                          <option value="AGENCY">Agência</option>
+                          <option value="INDUSTRY">Indústria</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        Telefone / WhatsApp <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="text"
+                          name="phone"
+                          required
+                          placeholder="(61) 99999-9999"
+                          value={formData.phone}
+                          onChange={handleInputChange}
+                          className="w-full rounded-xl border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-synfield-green focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        E-mail Financeiro
+                      </label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="email"
+                          name="billingEmail"
+                          placeholder="financeiro@empresa.com"
+                          value={formData.billingEmail}
+                          onChange={handleInputChange}
+                          className="w-full rounded-xl border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-synfield-green focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={!!documentError || isLoadingCnpj}
+                      className="flex items-center gap-2 rounded-xl bg-synfield-green px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-emerald-900 transition-all disabled:opacity-50"
+                    >
+                      Avançar <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* ETAPA 2: Endereço Fiscal (GRID OTIMIZADA PARA MOBILE) */}
+              {currentStep === 2 && (
+                <form onSubmit={handleNextStep} className="space-y-3.5">
+                  <div className="mb-1">
+                    <h4 className="text-sm font-bold text-synfield-graphite">
+                      2. Endereço Fiscal
+                    </h4>
+                    <p className="text-xs text-gray-500">
+                      Confira o endereço de faturamento da sua empresa.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4">
+                    {/* CEP + UF na mesma linha no mobile */}
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        CEP <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                        <input
+                          type="text"
+                          name="addressZipCode"
+                          required
+                          placeholder="70000-000"
+                          value={formData.addressZipCode}
+                          onChange={handleInputChange}
+                          onBlur={handleZipCodeBlur}
+                          className="w-full rounded-xl border border-gray-300 py-2 pl-8 pr-2 text-xs sm:text-sm focus:border-synfield-green focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="col-span-1 sm:col-span-1">
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        UF <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="addressState"
+                        required
+                        maxLength={2}
+                        placeholder="DF"
+                        value={formData.addressState}
+                        onChange={handleInputChange}
+                        className="w-full rounded-xl border border-gray-300 py-2 px-2.5 text-xs sm:text-sm font-bold uppercase focus:border-synfield-green focus:outline-none text-center"
+                      />
+                    </div>
+
+                    {/* Rua em linha cheia */}
+                    <div className="col-span-3 sm:col-span-2">
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        Rua / Logradouro <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="addressStreet"
+                        required
+                        placeholder="Av. Paulista"
+                        value={formData.addressStreet}
+                        onChange={handleInputChange}
+                        className="w-full rounded-xl border border-gray-300 py-2 px-3 text-xs sm:text-sm focus:border-synfield-green focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Número + Complemento em 2 colunas */}
+                    <div className="col-span-1 sm:col-span-1">
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        Número <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="addressNumber"
+                        required
+                        placeholder="1000"
+                        value={formData.addressNumber}
+                        onChange={handleInputChange}
+                        className="w-full rounded-xl border border-gray-300 py-2 px-2.5 text-xs sm:text-sm focus:border-synfield-green focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        Complemento
+                      </label>
+                      <input
+                        type="text"
+                        name="addressComplement"
+                        placeholder="Sala 402"
+                        value={formData.addressComplement}
+                        onChange={handleInputChange}
+                        className="w-full rounded-xl border border-gray-300 py-2 px-2.5 text-xs sm:text-sm focus:border-synfield-green focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Bairro + Cidade em 2 colunas no mobile */}
+                    <div className="col-span-1 sm:col-span-1">
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        Bairro <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="addressNeighborhood"
+                        required
+                        placeholder="Centro"
+                        value={formData.addressNeighborhood}
+                        onChange={handleInputChange}
+                        className="w-full rounded-xl border border-gray-300 py-2 px-2.5 text-xs sm:text-sm focus:border-synfield-green focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="col-span-2 sm:col-span-1">
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        Cidade <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="addressCity"
+                        required
+                        placeholder="Brasília"
+                        value={formData.addressCity}
+                        onChange={handleInputChange}
+                        className="w-full rounded-xl border border-gray-300 py-2 px-2.5 text-xs sm:text-sm focus:border-synfield-green focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t flex justify-between items-center">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep(1)}
+                      className="flex items-center gap-1 text-xs sm:text-sm font-semibold text-gray-500 hover:text-gray-800"
+                    >
+                      <ArrowLeft className="h-4 w-4" /> Voltar
+                    </button>
+
+                    <button
+                      type="submit"
+                      className="flex items-center gap-2 rounded-xl bg-synfield-green px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-emerald-900 transition-all"
+                    >
+                      Avançar <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* ETAPA 3: Responsável */}
+              {currentStep === 3 && (
+                <form onSubmit={handleFinalSubmit} className="space-y-3.5">
+                  <div className="mb-1">
+                    <h4 className="text-sm font-bold text-synfield-graphite">
+                      3. Responsável pela Conta
+                    </h4>
+                    <p className="text-xs text-gray-500">
+                      Informe quem utilizará o acesso de gestor principal.
+                    </p>
+                  </div>
+
+                  {/* Alerta Amigável para Erro de E-mail Cadastrado */}
+                  {emailError && (
+                    <div className="rounded-xl bg-amber-50 p-3.5 border border-amber-200 flex items-start gap-2.5 text-xs text-amber-900">
+                      <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <p className="leading-relaxed">{emailError}</p>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        Nome do Gestor <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="text"
+                          name="ownerName"
+                          required
+                          placeholder="Seu nome completo"
+                          value={formData.ownerName}
+                          onChange={handleInputChange}
+                          className="w-full rounded-xl border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-synfield-green focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">
+                        E-mail do Responsável <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="email"
+                          name="ownerEmail"
+                          required
+                          placeholder="seu.email@empresa.com"
+                          value={formData.ownerEmail}
+                          onChange={handleInputChange}
+                          className={`w-full rounded-xl border py-2 pl-9 pr-3 text-sm focus:outline-none ${
+                            emailError
+                              ? 'border-amber-500 focus:border-amber-600'
+                              : 'border-gray-300 focus:border-synfield-green'
+                          }`}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Resumo da Assinatura */}
+                  <div className="rounded-xl bg-gray-50 p-3 border border-gray-200 text-xs text-gray-600 space-y-1">
+                    <div className="flex justify-between">
+                      <span>Empresa:</span>
+                      <strong className="text-synfield-graphite truncate max-w-[200px]">{formData.tenantName || '-'}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Documento:</span>
+                      <strong className="text-synfield-graphite">{formData.document || '-'}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Localidade:</span>
+                      <strong className="text-synfield-graphite">
+                        {formData.addressCity ? `${formData.addressCity}/${formData.addressState}` : '-'}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t flex justify-between items-center">
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => setCurrentStep(2)}
+                      className="flex items-center gap-1 text-xs sm:text-sm font-semibold text-gray-500 hover:text-gray-800 disabled:opacity-50"
+                    >
+                      <ArrowLeft className="h-4 w-4" /> Voltar
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="flex items-center gap-2 rounded-xl bg-synfield-green px-6 sm:px-8 py-2.5 text-sm font-bold text-white shadow-md hover:bg-emerald-900 transition-all disabled:opacity-50"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" /> Processando...
+                        </>
+                      ) : (
+                        <>
+                          Finalizar Pagamento <ArrowRight className="h-4 w-4" />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
           </div>
         </div>
       )}
