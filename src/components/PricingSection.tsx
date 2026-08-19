@@ -75,7 +75,7 @@ const RETENTION_ADDONS = [
     id: 'monthly',
     name: 'Histórico Mensal',
     photos: '30 dias',
-    logs: '90 dias',
+    logs: '30 dias',
     price: '+R$ 99,00/mês',
     desc: 'Para fechamentos mensais e campanhas.',
   },
