@@ -32,6 +32,7 @@ export default tseslint.config(
       camelcase: 'off',
       '@typescript-eslint/no-unused-vars': 'warn',
       '@stylistic/max-len': 'off',
+      '@stylistic/multiline-ternary': 'off',
       'prefer-promise-reject-errors': 'off',
     },
   },

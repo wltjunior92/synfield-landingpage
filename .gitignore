@@ -11,6 +11,9 @@ node_modules
 dist
 dist-ssr
 *.local
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
 
 # Editor directories and files
 .vscode/*
@@ -25,3 +28,5 @@ dist-ssr
 
 /*.md
 !copilot-instructions.md
+
+.env
